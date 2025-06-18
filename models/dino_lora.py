@@ -4,7 +4,7 @@ from transformers import AutoModel, AutoImageProcessor
 
 # ----- Simple LoRA Wrapper -----
 class LoRALinear(nn.Module):
-    def __init__(self, original_linear, r=4, alpha=16):
+    def __init__(self, original_linear, r=16, alpha=16):
         super().__init__()
         self.original = original_linear
         self.r = r

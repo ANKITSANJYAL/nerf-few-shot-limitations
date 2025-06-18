@@ -22,7 +22,7 @@ device = "mps" if torch.backends.mps.is_available() else (
 # Hyperparams
 epochs = 20
 N_samples = 64
-BATCH_SIZE = 1024
+BATCH_SIZE = 256
 
 # Load models
 nerf = NeRFMLP(pos_dim=63).to(device)
@@ -32,7 +32,7 @@ posenc = PositionalEncoding(num_freqs=10)
 optimizer = optim.Adam(nerf.parameters(), lr=5e-4)
 
 # Load dataset (all training views)
-images, poses, (H, W, focal) = load_blender_data("data/nerf_synthetic/lego", split="train",half_res=True)
+images, poses, (H, W, focal) = load_blender_data("data/nerf_synthetic/lego", split="train", img_size=128)
 
 # Precompute all rays and targets
 all_rays_o, all_rays_d, all_pts, all_z_vals, all_targets = [], [], [], [], []
@@ -70,6 +70,8 @@ for img_tensor, pose in zip(images[:20], poses[:20]):
     all_pts.append(pts)
     all_z_vals.append(z_vals)
 
+num_views = len(all_rays_d)
+
 # Training loop
 for epoch in range(1, epochs + 1):
     start_time = time.time()
@@ -79,7 +81,7 @@ for epoch in range(1, epochs + 1):
     print(f"Epoch {epoch}/{epochs}")
     print("------------------------")
 
-    for view_idx in range(20):
+    for view_idx in range(num_views):
         rays_d = all_rays_d[view_idx].to(device)
         z_vals = all_z_vals[view_idx].to(device)
         pts_flat = all_pts[view_idx].to(device).view(-1, 3)
@@ -93,6 +95,8 @@ for epoch in range(1, epochs + 1):
         # 2. Forward pass in batches (with on-the-fly positional encoding)
         rgb_sigma_flat = []
         for i in range(0, pts_flat.shape[0], BATCH_SIZE):
+            if torch.backends.mps.is_available():
+                torch.mps.empty_cache()
             pts_batch = pts_flat[i:i + BATCH_SIZE]
             encoded_batch = posenc(pts_batch)
             rgb_sigma_flat.append(nerf(encoded_batch))

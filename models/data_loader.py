@@ -1,11 +1,9 @@
 import os
 import json
 import numpy as np
-import imageio
 import torch
 import torchvision.transforms as T
 from PIL import Image
-
 
 def load_blender_data(basedir, split="train", img_size=None, half_res=False):
     """
@@ -14,8 +12,8 @@ def load_blender_data(basedir, split="train", img_size=None, half_res=False):
     Args:
         basedir (str): Path to dataset (e.g., "./data/nerf_synthetic/lego")
         split (str): One of ["train", "val", "test"]
-        img_size (int or None): Image resize dimension (square). Overrides half_res if set.
-        half_res (bool): If True, downscale images and focal length by half.
+        img_size (int or None): Resize to (img_size, img_size). Overrides half_res if set.
+        half_res (bool): If True and img_size is None, halves original resolution and focal length.
 
     Returns:
         images (torch.Tensor): (N, 3, H, W)
@@ -34,22 +32,23 @@ def load_blender_data(basedir, split="train", img_size=None, half_res=False):
             raise FileNotFoundError(f"Image not found: {img_path}")
 
         img = Image.open(img_path).convert("RGB")
+        W_orig, H_orig = img.size
 
-        # Determine transform
+        # Determine image resizing logic
         if img_size:
-            transform = T.Compose([
-                T.Resize((img_size, img_size), interpolation=Image.LANCZOS),
-                T.ToTensor()
-            ])
+            resize_dims = (img_size, img_size)
+            focal_scale = img_size / W_orig
         elif half_res:
-            W_orig, H_orig = img.size
-            transform = T.Compose([
-                T.Resize((H_orig // 2, W_orig // 2), interpolation=Image.LANCZOS),
-                T.ToTensor()
-            ])
+            resize_dims = (H_orig // 2, W_orig // 2)
+            focal_scale = 0.5
         else:
-            transform = T.ToTensor()
+            resize_dims = (H_orig, W_orig)
+            focal_scale = 1.0
 
+        transform = T.Compose([
+            T.Resize(resize_dims, interpolation=Image.LANCZOS),
+            T.ToTensor()
+        ])
         img = transform(img)
         images.append(img)
 
@@ -60,7 +59,6 @@ def load_blender_data(basedir, split="train", img_size=None, half_res=False):
     poses = torch.stack(poses)          # (N, 4, 4)
     _, _, H, W = images.shape
 
-    camera_angle_x = meta["camera_angle_x"]
-    focal = 0.5 * W / np.tan(0.5 * camera_angle_x)
+    focal = 0.5 * W / np.tan(0.5 * meta["camera_angle_x"]) * focal_scale
 
     return images, poses, (H, W, focal)
