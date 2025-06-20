@@ -215,3 +215,5 @@ paper/output/
 *.vrb
 *.xdv
 *.dvi
+
+paper/

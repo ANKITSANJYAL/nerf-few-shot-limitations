@@ -101,9 +101,9 @@ python src/training/reproduce.py --experiment baseline
 - **Camera Poses**: Known ground truth poses
 
 ### Hardware Configuration
-- **Platform**: Apple M1 Pro / NVIDIA GPU
+- **Platform**: Apple M4 Pro
 - **Memory**: 16GB+ RAM
-- **Framework**: PyTorch 2.0 with MPS/CUDA backend
+- **Framework**: PyTorch 2.0 with MPS backend
 - **Training Time**: 2-4 hours per experiment
 
 ## 📈 Results and Analysis
