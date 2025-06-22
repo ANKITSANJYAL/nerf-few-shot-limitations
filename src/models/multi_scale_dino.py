@@ -7,7 +7,7 @@ import math
 class MultiScaleDINOFeatures(nn.Module):
     """Multi-scale DINO feature extraction with hierarchical fusion"""
     
-    def __init__(self, model_name="facebook/dinov2-base", lora_rank=16, lora_alpha=16):
+    def __init__(self, model_name="facebook/dinov2-base", use_lora=True, lora_rank=16, lora_alpha=16):
         super().__init__()
         self.processor = AutoImageProcessor.from_pretrained(model_name)
         self.backbone = AutoModel.from_pretrained(model_name)
@@ -21,7 +21,8 @@ class MultiScaleDINOFeatures(nn.Module):
         self.embed_dim = self.backbone.config.hidden_size
         
         # Inject LoRA into attention layers
-        self._inject_lora(lora_rank, lora_alpha)
+        if use_lora:
+            self._inject_lora(lora_rank, lora_alpha)
         
         # Multi-scale feature fusion
         self.scales = [1, 2, 4]  # Different downsampling factors
@@ -46,6 +47,7 @@ class MultiScaleDINOFeatures(nn.Module):
             nn.ReLU(inplace=True),
             nn.Linear(256, 128)
         )
+        self.output_dim = 128
         
     def _inject_lora(self, rank, alpha):
         """Inject LoRA into attention layers"""

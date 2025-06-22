@@ -1,8 +1,8 @@
-# Baseline NeRF Configuration
-# This configuration runs a standard NeRF model without any DINO features.
+# NeRF with frozen DINO Features Configuration
+# This configuration uses frozen DINO features as input to NeRF, without LoRA.
 
 experiment:
-  name: "NeRF-Baseline-Lego"
+  name: "DINO-NeRF-Lego"
 
 data:
   dataset: "nerf_synthetic"
@@ -13,10 +13,11 @@ data:
   far: 6.0
 
 model:
-  use_dino: false
+  use_dino: true
+  dino_model_type: 'single_scale'
 
 nerf_model:
-  pos_freq: 10
+  pos_freq: 12
   dir_freq: 4
   hidden_dim: 256
   num_layers: 8
@@ -24,43 +25,37 @@ nerf_model:
 dino_model:
   name: "facebook/dinov2-base"
   use_lora: false
-  lora_rank: 4
-  lora_alpha: 4
+  lora_rank: 16
+  lora_alpha: 16
 
 training:
   epochs: 200
-  batch_size: 1024
+  batch_size: 512
   progressive_schedule:
     epochs_0_50: [32, 32, 32]
     epochs_50_100: [64, 64, 48]
     epochs_100_plus: [128, 128, 64]
 
 optimizer:
-  lr: 5.0e-4
+  lr: 2.0e-4
   weight_decay: 1.0e-6
-  lr_milestones: [100, 150]
+  lr_milestones: [80, 150]
   lr_gamma: 0.5
 
 loss:
   rgb_weight: 1.0
-  depth_weight: 0.0
-  reg_weight: 0.0
+  depth_weight: 0.1
+  reg_weight: 0.0001
 
 rendering:
   near: 2.0
   far: 6.0
-  chunk_size: 2048
-  noise_std: 0.0
+  chunk_size: 1024
+  noise_std: 0.1
   white_bkgd: false
 
 output:
-  save_dir: "results/baseline_lego"
+  save_dir: "results/dino_nerf_lego"
   val_freq: 10
   save_freq: 50
-
-# Expected results
-expected_results:
-  psnr: 21.7
-  ssim: 0.52
-  lpips: 0.28
-  training_time: "2.8h" 
+  log_freq: 1 

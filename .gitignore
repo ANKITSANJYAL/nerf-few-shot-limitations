@@ -70,6 +70,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+paper/
 
 # PyBuilder
 target/
@@ -149,6 +150,7 @@ logs/
 runs/
 wandb/
 tensorboard_logs/
+results/
 
 # Temporary files
 *.tmp
@@ -215,5 +217,3 @@ paper/output/
 *.vrb
 *.xdv
 *.dvi
-
-paper/
